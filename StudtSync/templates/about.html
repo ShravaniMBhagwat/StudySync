@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}About StudySync{% endblock %}
+{% block meta_desc %}Learn about StudySync, its intelligent study-material tools, ML architecture, and capabilities.{% endblock %}
+
+{% block content %}
+<script>
+  if (window.location.protocol === 'file:') {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '../static/css/style.css';
+    document.head.appendChild(l);
+  }
+</script>
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Overview &amp; Architecture</span>
+    <h1 class="page-title">About StudySync</h1>
+    <p class="page-subtitle">A modern, machine-learning-powered study material organiser and previous-year question paper analyser.</p>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="container">
+    <div class="about-grid">
+      <div class="content-card info-card">
+        <div class="card-icon-wrap icon-blue" aria-hidden="true">💡</div>
+        <h2 class="content-card-title">What StudySync Does</h2>
+        <p>StudySync provides a structured, intelligent environment for computer science students to organize class notes, extract meaningful concepts, and analyze examination question papers with machine-learning assistance.</p>
+        <p>It combines transparent lexical matching, supervised classification, and unsupervised topic clustering into an intuitive web workflow.</p>
+      </div>
+
+      <div class="content-card info-card">
+        <div class="card-icon-wrap icon-violet" aria-hidden="true">🔒</div>
+        <h2 class="content-card-title">Privacy &amp; Data Safety</h2>
+        <p>Your uploaded documents are processed securely in temporary storage and removed immediately after text extraction. In-memory data structures expire automatically, ensuring your study materials remain private.</p>
+        <p>No documents are retained, executed, or permanently stored in databases.</p>
+      </div>
+
+      <div class="content-card info-card">
+        <div class="card-icon-wrap icon-teal" aria-hidden="true">⚙️</div>
+        <h2 class="content-card-title">Extraction &amp; Processing Engine</h2>
+        <p>StudySync utilizes <strong>PyMuPDF</strong> for high-fidelity text extraction across multi-page PDF documents, alongside native Python readers for plain text files.</p>
+        <p>Extracted texts are tokenized, normalized, and converted into mathematical representations using <strong>TF-IDF</strong> vectors.</p>
+      </div>
+
+      <div class="content-card info-card">
+        <div class="card-icon-wrap icon-amber" aria-hidden="true">🔬</div>
+        <h2 class="content-card-title">Learning Models &amp; Diagnostics</h2>
+        <p>Classifiers include <strong>Multinomial Naive Bayes</strong> and <strong>Linear Support Vector Machines (SVM)</strong> evaluated via 5-fold stratified cross-validation.</p>
+        <p>Question paper analysis applies <strong>Cosine Similarity</strong> against syllabus topics, while the <strong>Model Lab</strong> allows exploration of Chi-Squared feature selection, TruncatedSVD reduction, and KMeans clustering.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

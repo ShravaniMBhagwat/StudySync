@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}StudySync Analytics{% endblock %}
+{% block meta_desc %}StudySync question mappings, classification evaluation, clustering, and regression analytics.{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Performance &amp; Pipeline Analytics</span>
+    <h1 class="page-title">📊 Analytics Dashboard</h1>
+    <p class="page-subtitle">Charts and summaries are generated from the latest available application analysis.</p>
+    <div style="margin-top: var(--sp-4);">
+      <a href="{{ url_for('model_lab') }}" class="btn btn--secondary btn--sm">Open Model Lab →</a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section analytics-section">
+  <div class="container">
+    <section class="content-card result-card" id="question-analytics">
+      <div class="card-header-flex">
+        <div>
+          <span class="section-eyebrow">Module Analysis</span>
+          <h2 class="content-card-title">QuestionBank analysis</h2>
+        </div>
+        {% if question_data.available and question_data.workflow_id %}
+        <div class="export-actions">
+          <a class="btn btn--secondary btn--sm" href="{{ url_for('export_analytics_csv', report='question-mappings', workflow_id=question_data.workflow_id) }}">📥 Export question mappings CSV</a>
+          <a class="btn btn--secondary btn--sm" href="{{ url_for('export_analytics_csv', report='topic-frequency', workflow_id=question_data.workflow_id) }}">📥 Export topic frequency CSV</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if question_data.available %}
+      <p class="card-meta-text">Showing the latest mapped upload: {{ question_data.paper_count }} unique paper(s).</p>
+      
+      {% if question_data.topic_chart %}
+      <h3 class="section-subheading">Mapped questions by syllabus topic</h3>
+      <div class="chart-container">
+        <img src="{{ question_data.topic_chart }}" alt="Bar chart of actual mapped question frequency by topic" style="max-width:100%;height:auto" />
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">There are no syllabus topics available to chart in this analysis.</p>
+      {% endif %}
+
+      <h3 class="section-subheading">Year-wise topic trends</h3>
+      {% if question_data.year_trends_available %}
+      <p class="text-sm text-muted">Years are inferred from filenames and are shown only when every unique paper has a four-digit year and the upload includes at least two distinct years.</p>
+      {% if question_data.year_chart %}
+      <div class="chart-container">
+        <img src="{{ question_data.year_chart }}" alt="Line chart of actual mapped question frequencies by year and topic" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Topic</th>{% for year in question_data.trend_years %}<th>{{ year }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in question_data.trend_rows %}<tr><td>{{ row.topic }}</td>{% for count in row.counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">{{ question_data.year_trends_reason }}</p>
+      {% endif %}
+
+      <h3 class="section-subheading">Question-to-topic mappings</h3>
+      {% if question_data.questions %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Question</th><th>Matched topic</th><th>Similarity</th><th>Source paper</th><th>Page</th><th>Review</th></tr></thead>
+          <tbody>
+            {% for row in question_data.questions %}
+            <tr>
+              <td>{{ row.question_text }}</td>
+              <td>{{ row.matched_topic }}</td>
+              <td><code>{{ "%.3f"|format(row.similarity_score) }}</code></td>
+              <td>{{ row.source_file }}</td>
+              <td>{{ row.page_number if row.page_number else "Unavailable" }}</td>
+              <td>{% if row.needs_review %}Needs manual review{% else %}Mapped{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">No candidate questions were extracted from the latest uploaded papers.</p>
+      {% endif %}
+
+      <h3 class="section-subheading">Total mapped question frequency</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Syllabus topic</th><th>Question count</th></tr></thead>
+          <tbody>{% for row in question_data.frequency %}<tr><td>{{ row.topic }}</td><td>{{ row.question_count }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">No QuestionBank analysis is available yet. Upload a syllabus and papers in <a href="{{ url_for('questionbank') }}">QuestionBank Mapper</a>, review topics, and map questions to populate this dashboard.</p>
+      {% endif %}
+      <p class="text-xs text-muted" style="margin-top: var(--sp-4);">Similarity scores are lexical matching scores, not probabilities or exam predictions. Corrections update the current in-memory analysis only.</p>
+    </section>
+
+    <section class="content-card result-card" id="classification-analytics">
+      <span class="section-eyebrow">Classifier Benchmarks</span>
+      <h2 class="content-card-title">NoteMap classification comparison</h2>
+      {% if classification.available %}
+      {% if classification.is_demo_data %}
+      <p class="result-notice"><strong>Demonstration data:</strong> these are actual held-out test-set metrics for the small generated NoteMap corpus, not evidence of performance on real student notes. Selected model: {{ classification.selected_name }}.</p>
+      {% endif %}
+      <p class="text-sm text-muted">The chart and confusion matrix below are generated from the classifier evaluation. Selected model: {{ classification.selected_name }}.</p>
+      {% if classification.comparison_chart %}
+      <div class="chart-container">
+        <img src="{{ classification.comparison_chart }}" alt="Bar chart comparing actual held-out test metrics for Multinomial Naive Bayes and Linear SVM" style="max-width:100%;height:auto" />
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">Classification comparison metrics are unavailable.</p>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Model</th><th>Test accuracy</th><th>Macro precision</th><th>Macro recall</th><th>Macro-F1</th></tr></thead>
+          <tbody>
+            {% for key in ["mnb", "svm"] %}
+            {% set metrics = classification.comparisons[key] %}
+            <tr><td>{{ metrics.name }}</td><td>{{ "%.3f"|format(metrics.accuracy) }}</td><td>{{ "%.3f"|format(metrics.precision_macro) }}</td><td>{{ "%.3f"|format(metrics.recall_macro) }}</td><td>{{ "%.3f"|format(metrics.macro_f1) }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <h3 class="section-subheading">Selected model confusion matrix</h3>
+      <p class="text-sm text-muted">Rows are actual subjects; columns are predicted subjects. Counts come from the selected model's held-out test examples.</p>
+      {% if classification.confusion_chart %}
+      <div class="chart-container">
+        <img src="{{ classification.confusion_chart }}" alt="Confusion matrix chart for selected model {{ classification.selected_name }}" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Actual \ Predicted</th>{% for label in classification.classes %}<th>{{ label }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for label in classification.classes %}<tr><th>{{ label }}</th>{% for count in classification.selected_metrics.confusion_matrix[loop.index0] %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">{{ classification.reason if classification.reason else "Classification evaluation has not been run or is unavailable." }}</p>
+      {% endif %}
+    </section>
+
+    <section class="content-card result-card" id="clustering-analytics">
+      <span class="section-eyebrow">Unsupervised Learning</span>
+      <h2 class="content-card-title">Question clustering</h2>
+      {% if clustering.available %}
+      <p class="text-sm">Clusters are computed from candidate question text in the latest QuestionBank upload. They are discovered groupings and are not guaranteed to match official syllabus units.</p>
+      {% if clustering.silhouette_score is not none %}<p class="text-sm">Cosine silhouette: {{ "%.3f"|format(clustering.silhouette_score) }} · inertia: {{ "%.3f"|format(clustering.inertia) }}</p>{% endif %}
+      <p class="diagnostic-text">{{ clustering.diagnostic_note }}</p>
+      {% if clustering.chart %}
+      <div class="chart-container">
+        <img src="{{ clustering.chart }}" alt="KMeans clusters of actual uploaded question text shown in a TruncatedSVD projection" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Cluster</th><th>Questions</th><th>Representative terms</th><th>Example question</th></tr></thead>
+          <tbody>{% for cluster in clustering.clusters %}<tr><td><span class="cluster-badge">#{{ cluster.cluster_id + 1 }}</span></td><td>{{ cluster.document_count }}</td><td>{{ cluster.top_terms|join(", ") }}</td><td class="text-truncate-cell">{{ cluster.example }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state empty-state--sm">{{ clustering.reason if clustering.reason else "Upload papers with at least three extractable candidate questions to view clustering." }}</p>
+      {% endif %}
+    </section>
+
+    <section class="content-card result-card" id="regression-analytics">
+      <span class="section-eyebrow">Baseline Regression</span>
+      <h2 class="content-card-title">Regression evaluation</h2>
+      {% if regression.available %}
+      <p class="text-sm">Metrics come from an 80/20 held-out split of the documented UCI Student Performance dataset ({{ regression.n_used }} complete rows). Features: {{ regression.features_used|join(", ") }}; target: {{ regression.target }}. Seed: {{ regression.random_state }}.</p>
+      <div class="metric-row">
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">MAE</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.mae) }}</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">RMSE</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.rmse) }}</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">R&sup2; Score</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.r2) }}</span>
+        </div>
+      </div>
+      {% if regression.actual_predicted_chart %}
+      <div class="chart-container">
+        <img src="{{ regression.actual_predicted_chart }}" alt="Actual versus predicted values for held-out UCI regression rows" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+      <p class="text-muted text-sm">{{ regression.disclaimer }}</p>
+      {% else %}
+      <p class="empty-state empty-state--sm">{{ regression.reason if regression.reason else "Regression evaluation is unavailable." }}</p>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}

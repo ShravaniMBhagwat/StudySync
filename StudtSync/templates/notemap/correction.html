@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}NoteMap — Correction Review{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Correction Submitted</span>
+    <h1 class="page-title">Prediction correction reviewed</h1>
+    <p class="page-subtitle">Your feedback is shown here but is not stored.</p>
+  </div>
+</section>
+
+<section class="result-section">
+  <div class="container container--narrow">
+    <div class="content-card result-card">
+      <div class="result-details-grid">
+        <div class="result-detail-item">
+          <span class="result-label">Model prediction</span>
+          <span class="result-value"><s>{{ predicted }}</s></span>
+        </div>
+        <div class="result-detail-item">
+          <span class="result-label">Your correction</span>
+          <span class="result-value text-accent"><strong>{{ corrected }}</strong></span>
+        </div>
+      </div>
+      <p class="text-muted text-sm" style="margin-top: var(--sp-4);">This correction is not stored and will not update the demonstration model.</p>
+      <div style="margin-top: var(--sp-6);">
+        <a href="{{ url_for('notemap') }}" class="btn btn--primary">← Analyse another note</a>
+        <a href="{{ url_for('analytics') }}" class="btn btn--secondary">View Dashboard →</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+        content="{% block meta_desc %}StudySync — ML-powered study material organiser and question paper analyser for CS students.{% endblock %}" />
+  <title>{% block title %}StudySync{% endblock %} | StudySync</title>
+
+  <!-- Google Fonts: Inter, Space Grotesk, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='5') }}" />
+  <script>
+    if (window.location.protocol === 'file:') {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '../static/css/style.css';
+      document.head.appendChild(link);
+    }
+  </script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Full-page loading overlay ────────────────────────────────── -->
+<div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite" aria-label="Processing">
+  <div class="spinner-wrap">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="spinner-pulse" aria-hidden="true"></div>
+  </div>
+  <p class="loading-text" id="loadingText">Processing your file…</p>
+</div>
+
+<!-- ── Navigation ────────────────────────────────────────────────── -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a class="nav-brand" href="{{ url_for('index') }}" aria-label="StudySync home">
+      <span class="nav-brand-icon" aria-hidden="true">📚</span>
+      <span class="nav-brand-name">Study<span class="nav-brand-accent">Sync</span></span>
+    </a>
+
+    <button class="nav-toggle" id="navToggle"
+            aria-controls="navLinks" aria-expanded="false" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+
+    <ul class="nav-links" id="navLinks" role="list">
+      <li>
+        <a href="{{ url_for('index') }}"
+           class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
+           {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>
+          Home
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('notemap') }}"
+           class="nav-link {% if 'notemap' in (request.endpoint or '') %}active{% endif %}"
+           {% if 'notemap' in (request.endpoint or '') %}aria-current="page"{% endif %}>
+          NoteMap
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('questionbank') }}"
+           class="nav-link {% if 'questionbank' in (request.endpoint or '') %}active{% endif %}"
+           {% if 'questionbank' in (request.endpoint or '') %}aria-current="page"{% endif %}>
+          QuestionBank
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('analytics') }}"
+           class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}"
+           {% if request.endpoint == 'analytics' %}aria-current="page"{% endif %}>
+          Analytics
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('model_lab') }}"
+           class="nav-link {% if request.endpoint == 'model_lab' %}active{% endif %}"
+           {% if request.endpoint == 'model_lab' %}aria-current="page"{% endif %}>
+          Model Lab
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('source_code') }}"
+           class="nav-link {% if request.endpoint == 'source_code' %}active{% endif %}"
+           {% if request.endpoint == 'source_code' %}aria-current="page"{% endif %}>
+          Source Code
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('about') }}"
+           class="nav-link {% if request.endpoint == 'about' %}active{% endif %}"
+           {% if request.endpoint == 'about' %}aria-current="page"{% endif %}>
+          About
+        </a>
+      </li>
+      <li>
+        <a href="{{ url_for('notemap') }}" class="nav-link nav-cta">Launch NoteMap →</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Flash messages ────────────────────────────────────────────── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container" role="alert" aria-live="assertive">
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">
+          <span class="flash-icon" aria-hidden="true">
+            {% if category == 'danger'  %}⚠️
+            {% elif category == 'warning' %}⚡
+            {% elif category == 'info'    %}ℹ️
+            {% else %}✅{% endif %}
+          </span>
+          <span class="flash-body">{{ message }}</span>
+          <button class="flash-close" aria-label="Dismiss message"
+                  onclick="this.closest('.flash').remove()">✕</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ── Main content ───────────────────────────────────────────────── -->
+<main id="main-content" tabindex="-1">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────── -->
+<footer class="footer" role="contentinfo">
+  <div class="footer-inner">
+    <div>
+      <p class="footer-brand-name">Study<span>Sync</span></p>
+      <p class="footer-tagline">An intelligent machine-learning workspace for organizing study notes and analyzing previous-year examination patterns.</p>
+      <div class="footer-status-pill">
+        <span class="status-dot"></span> ML Inference Engine Ready
+      </div>
+    </div>
+    <div>
+      <p class="footer-col-title">Modules</p>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('notemap') }}">NoteMap — Note Classifier</a></li>
+        <li><a href="{{ url_for('questionbank') }}">QuestionBank Mapper</a></li>
+        <li><a href="{{ url_for('analytics') }}">Analytics Dashboard</a></li>
+        <li><a href="{{ url_for('model_lab') }}">Model Lab Workbench</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="footer-col-title">Project Info</p>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('about') }}">About StudySync</a></li>
+        <li><a href="https://archive.ics.uci.edu/dataset/320/student+performance" target="_blank" rel="noopener">UCI Student Performance Dataset ↗</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="footer-col-title">Source Code</p>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('source_code') }}"><strong>Browse All Source Code (Viewer) ↗</strong></a></li>
+        <li><a href="{{ url_for('source_code', file='app.py') }}"><code>app.py</code> (Flask Web App)</a></li>
+        <li><a href="{{ url_for('source_code', file='ml/classifier.py') }}"><code>ml/classifier.py</code> (NoteMap)</a></li>
+        <li><a href="{{ url_for('source_code', file='ml/similarity_mapper.py') }}"><code>similarity_mapper.py</code> (Cosine)</a></li>
+        <li><a href="{{ url_for('source_code', file='ml/trend_analyzer.py') }}"><code>trend_analyzer.py</code> (Analytics)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>Designed for focused, data-informed learning</span>
+    <a class="footer-source-btn" href="{{ url_for('source_code') }}">
+      <span class="source-icon">💻</span> Source code (all project files) <span aria-hidden="true">↗</span>
+    </a>
+    <div class="footer-tech" aria-label="Technologies used">
+      <span class="tech-pill">Python</span>
+      <span class="tech-pill">Flask</span>
+      <span class="tech-pill">scikit-learn</span>
+      <span class="tech-pill">PyMuPDF</span>
+      <span class="tech-pill">Pandas</span>
+      <span class="tech-pill">Matplotlib</span>
+    </div>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}QuestionBank — Upload Papers &amp; Notes{% endblock %}
+{% block meta_desc %}Upload course syllabus or study notes and multiple previous-year question papers to map questions to topics and identify coverage gaps.{% endblock %}
+
+{% block content %}
+<script>
+  if (window.location.protocol === 'file:') {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '../../static/css/style.css';
+    document.head.appendChild(l);
+  }
+</script>
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Topic Mapping &amp; Trend Analysis</span>
+    <h1 class="page-title">📋 QuestionBank Mapper</h1>
+    <p class="page-subtitle">Upload your course syllabus or lecture notes alongside one or more question papers to automatically extract questions, align them to topics, and pinpoint coverage gaps.</p>
+  </div>
+</section>
+
+<section class="upload-section">
+  <div class="container container--narrow">
+    <div class="upload-panel">
+      <form method="POST" action="{{ url_for('questionbank_analyze') }}"
+            enctype="multipart/form-data" id="qbank-form" data-loading="Segmenting questions &amp; parsing syllabus topics..." novalidate>
+
+        <!-- Syllabus / Notes upload (Supports Multiple Files) -->
+        <div class="form-group">
+          <label class="form-label" for="syllabusInput">
+            <strong>1. Course Syllabus or Study Notes (PDF)</strong>
+            <span class="form-hint-inline">— Multiple files allowed (e.g. Unit 1.pdf, Unit 2.pdf, Syllabus.pdf)</span>
+          </label>
+          <div class="upload-zone upload-zone--sm" id="syllabusZone">
+            <input type="file" name="syllabus_file" id="syllabusInput"
+                   accept=".pdf" class="upload-input" aria-label="Choose syllabus file" multiple required />
+            <div class="upload-label">
+              <div class="upload-icon-wrap" aria-hidden="true">
+                <span class="upload-icon">📑</span>
+              </div>
+              <span class="upload-primary">Click or drag &amp; drop syllabus / notes (multiple PDF files supported)</span>
+              <span class="upload-secondary">Digital text PDF &nbsp;•&nbsp; Select one or multiple files at once</span>
+              <span class="upload-filename" id="syllabusFilename" aria-live="polite"></span>
+              <button type="button" class="upload-clear" id="syllabusClear" style="display:none;">Clear files</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PYQ upload (multiple files) -->
+        <div class="form-group">
+          <label class="form-label" for="pyqInput">
+            <strong>2. Previous-Year Question Papers (PDF)</strong>
+            <span class="form-hint-inline">— Select one or multiple question papers</span>
+          </label>
+          <div class="upload-zone upload-zone--sm" id="pyqZone">
+            <input type="file" name="pyq_files" id="pyqInput"
+                   accept=".pdf" class="upload-input" aria-label="Choose question papers" multiple required />
+            <div class="upload-label">
+              <div class="upload-icon-wrap" aria-hidden="true">
+                <span class="upload-icon">📚</span>
+              </div>
+              <span class="upload-primary">Click or drag &amp; drop question papers (PDF)</span>
+              <span class="upload-secondary">Tip: Name files with the year (e.g. <code>2022_Exam.pdf</code>, <code>2023_Exam.pdf</code>) for year trends</span>
+              <span class="upload-filename" id="pyqFilenames" aria-live="polite"></span>
+              <button type="button" class="upload-clear" id="pyqClear" style="display:none;">Clear files</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-callout">
+          <div class="callout-icon" aria-hidden="true">💡</div>
+          <div class="callout-body">
+            <strong>Multi-File Processing:</strong> You can select multiple syllabus modules, notes, and question papers at the same time. Text will be cleanly extracted and candidate questions will be segmented and matched across all uploaded papers.
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full btn--lg" id="qbank-submit">
+          <span>Process Documents &amp; Review Topics</span> <span aria-hidden="true">→</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

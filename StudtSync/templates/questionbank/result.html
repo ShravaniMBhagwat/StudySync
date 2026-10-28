@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}QuestionBank — Mapping Results{% endblock %}
+{% block meta_desc %}Review candidate questions and their closest syllabus-topic matches.{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Step 3: Alignment &amp; Frequency</span>
+    <h1 class="page-title">📋 QuestionBank Mapping Results</h1>
+    <p class="page-subtitle">Candidate exam questions matched to syllabus units via TF-IDF cosine similarity.</p>
+  </div>
+</section>
+
+<section class="result-section">
+  <div class="container">
+    <!-- Papers overview banner -->
+    <div class="content-card result-card">
+      <div class="card-header-flex">
+        <div>
+          <span class="section-eyebrow">Input Papers</span>
+          <h2 class="content-card-title">Uploaded papers</h2>
+        </div>
+        <a href="{{ url_for('analytics') }}" class="btn btn--secondary btn--sm">View in Analytics Dashboard →</a>
+      </div>
+
+      <p class="text-sm text-muted"><strong>Important:</strong> TF-IDF cosine similarity measures lexical text similarity, not a probability that a topic will appear in an exam. Low-scoring matches are marked for manual review.</p>
+
+      {% if duplicate_files %}
+      <p class="result-notice result-notice--warning" style="margin-top: var(--sp-3);">Duplicate paper content was ignored: {{ duplicate_files|join(", ") }}</p>
+      {% endif %}
+      {% if corrected %}
+      <p class="result-notice" style="margin-top: var(--sp-3);">Your reviewed mappings were applied and topic counts recalculated. Corrections are temporary and are not saved.</p>
+      {% endif %}
+
+      <ul class="file-badges-list" style="margin-top: var(--sp-4);">
+        {% for paper in papers %}
+        <li class="file-badge-item">
+          <span class="file-badge-icon">📄</span>
+          <span class="file-badge-name"><strong>{{ paper.filename }}</strong></span>
+          <span class="file-badge-details">— {{ paper.characters }} extracted characters, {{ paper.pages }} text pages{% if paper.year != "Unknown" %} (year {{ paper.year }}){% else %} (year unavailable){% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Main Topics Breakdown Section with Bold Headings -->
+    {% if topic_question_map %}
+    <div class="content-card result-card" style="margin-top: var(--sp-8);">
+      <div class="card-header-flex">
+        <div>
+          <span class="section-eyebrow">Main Topics Breakdown</span>
+          <h2 class="content-card-title">Syllabus Topics &amp; Mapped Questions</h2>
+        </div>
+        <span class="stat-pill stat-pill--highlight">{{ topics|length }} Main Topics</span>
+      </div>
+      <p class="text-sm text-muted">Browse below to see each main syllabus topic with bold headings, topic badges, and all exam questions mapped directly beneath it:</p>
+
+      <div class="topic-groups-container" style="margin-top: var(--sp-6);">
+        {% for topic in topics %}
+        {% set matched = topic_question_map.get(topic, []) %}
+        {% set subheadings = topic_subheadings.get(topic, []) if topic_subheadings else [] %}
+        <div class="topic-group-card {% if matched|length == 0 %}topic-group-card--gap{% endif %}">
+          <div class="topic-group-header">
+            <div class="topic-title-wrap">
+              <span class="topic-index-pill">Topic {{ loop.index }}</span>
+              <h3 class="topic-main-heading">{{ topic }}</h3>
+            </div>
+            <div class="topic-count-badge {% if matched|length > 0 %}badge--active{% else %}badge--empty{% endif %}">
+              {% if matched|length > 0 %}
+                {{ matched|length }} question{{ "s" if matched|length > 1 else "" }} mapped
+              {% else %}
+                ⚠️ 0 questions (Coverage Gap)
+              {% endif %}
+            </div>
+          </div>
+
+          {% if subheadings %}
+          <details class="topic-subheadings-toggle" style="margin: 0 0 var(--sp-4) 0;">
+            <summary class="subheadings-toggle-btn">
+              <span>🔍 View Subheadings &amp; Concepts ({{ subheadings|length }})</span>
+              <span class="toggle-arrow" aria-hidden="true">▾</span>
+            </summary>
+            <div class="subheadings-pill-list">
+              {% for sub in subheadings %}
+              <span class="subheading-pill">{{ sub }}</span>
+              {% endfor %}
+            </div>
+          </details>
+          {% endif %}
+
+          <div class="topic-questions-list">
+            {% if matched %}
+              {% for q in matched %}
+              <div class="topic-question-item">
+                <div class="question-item-top">
+                  <span class="q-number-tag"><strong>Question {{ loop.index }}</strong></span>
+                  <span class="q-source-badge">📄 {{ q.source_file }}{% if q.page_number %}, p. {{ q.page_number }}{% endif %}</span>
+                  <span class="q-score-badge">Similarity: <code>{{ "%.3f"|format(q.similarity_score) }}</code></span>
+                </div>
+                <div class="question-item-text">
+                  {{ q.question_text }}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p class="no-questions-notice">⚠️ No previous-year questions mapped to this topic in the uploaded papers.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if unmatched_questions %}
+        <div class="topic-group-card topic-group-card--unmatched">
+          <div class="topic-group-header">
+            <div class="topic-title-wrap">
+              <span class="topic-index-pill">Review</span>
+              <h3 class="topic-main-heading">Unmatched Questions (Needs Manual Assignment)</h3>
+            </div>
+            <div class="topic-count-badge badge--warning">{{ unmatched_questions|length }} questions</div>
+          </div>
+          <div class="topic-questions-list">
+            {% for q in unmatched_questions %}
+            <div class="topic-question-item">
+              <div class="question-item-top">
+                <span class="q-number-tag"><strong>Unmatched Question</strong></span>
+                <span class="q-source-badge">📄 {{ q.source_file }}{% if q.page_number %}, p. {{ q.page_number }}{% endif %}</span>
+              </div>
+              <div class="question-item-text">{{ q.question_text }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Question Mappings Table (Editable) -->
+    <div class="content-card result-card" style="margin-top: var(--sp-8);">
+      <span class="section-eyebrow">Interactive Reassignment</span>
+      <h2 class="content-card-title">Question mappings</h2>
+      <p class="text-sm text-muted">Question splitting is rule based: numbered question starts or recognizable question/instruction wording start a candidate; following lines are treated as continuation text. If no start is detected, question-like paragraphs are used. Ordinary lines are not automatically treated as separate questions.</p>
+
+      {% if questions %}
+      <form method="POST" action="{{ url_for('questionbank_map') }}" style="margin-top: var(--sp-4);">
+        <input type="hidden" name="workflow_id" value="{{ workflow_id }}" />
+        {% for topic in topics %}
+        <input type="hidden" name="topics" value="{{ topic }}" />
+        {% endfor %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="min-width: 280px;">Candidate question</th>
+                <th>Source / page</th>
+                <th>Similarity</th>
+                <th>Review status</th>
+                <th style="min-width: 220px;">Topic mapping (editable)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for question in questions %}
+              <tr>
+                <td>
+                  <div class="table-q-row">
+                    <span class="table-q-label"><strong>Question {{ loop.index }}:</strong></span>
+                    <span class="table-q-content">{{ question.question_text }}</span>
+                  </div>
+                </td>
+                <td>{{ question.source_file }}{% if question.page_number %}, p. {{ question.page_number }}{% endif %}</td>
+                <td><code>{{ "%.3f"|format(question.similarity_score) }}</code></td>
+                <td>
+                  {% if question.needs_review %}
+                  <span class="badge badge--warning">Needs manual review</span>
+                  {% if question.review_reason %}<div class="text-xs text-muted" style="margin-top: 2px;">{{ question.review_reason }}</div>{% endif %}
+                  {% else %}
+                  <span class="badge badge--success">Suggested match</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <select name="mapping" aria-label="Topic mapping for question {{ loop.index }}" class="form-control-sm">
+                    <option value="Unmatched" {% if question.matched_topic == "Unmatched" %}selected{% endif %}>Unmatched / review</option>
+                    {% for topic in topics %}
+                    <option value="{{ topic }}" {% if question.matched_topic == topic %}selected{% endif %}>{{ topic }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: var(--sp-5);">
+          <button type="submit" class="btn btn--primary">
+            <span>Recalculate topic counts</span> <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <p class="empty-state empty-state--sm">No question candidates were found with the documented extraction rules.</p>
+      {% endif %}
+    </div>
+
+    <!-- Topic Frequency and Chart -->
+    <div class="content-card result-card" style="margin-top: var(--sp-8);">
+      <span class="section-eyebrow">Distribution Metrics</span>
+      <h2 class="content-card-title">Total question counts per topic</h2>
+      
+      <div class="table-responsive" style="margin-top: var(--sp-4);">
+        <table class="data-table">
+          <thead><tr><th>Syllabus topic</th><th>Mapped question count</th></tr></thead>
+          <tbody>
+            {% for row in frequency %}
+            <tr><td>{{ row.topic }}</td><td>{{ row.question_count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if topic_chart %}
+      <div class="chart-container" style="margin-top: var(--sp-6);">
+        <img src="{{ topic_chart }}" alt="Bar chart showing mapped question counts by syllabus topic" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+
+      <div class="coverage-gaps-box" style="margin-top: var(--sp-6);">
+        <h3 class="section-subheading">Syllabus coverage gaps</h3>
+        <p class="text-sm text-muted">Topics with no accepted match in these uploaded papers:</p>
+        {% if gaps %}
+        <div class="tags-list" style="margin-top: var(--sp-3);">
+          {% for topic in gaps %}
+          <span class="tag tag--orange">⚠️ {{ topic }}</span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm" style="color: var(--clr-success); margin-top: var(--sp-2);">Every listed topic has at least one accepted match in this upload set.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Year-wise topic trends -->
+    <div class="content-card result-card" style="margin-top: var(--sp-8);">
+      <span class="section-eyebrow">Temporal Pattern</span>
+      <h2 class="content-card-title">Year-wise topic trends</h2>
+      {% if year_trends_available %}
+      <p class="text-sm text-muted">Years are inferred from filenames and are shown only when every unique paper has a four-digit year and the upload includes at least two distinct years.</p>
+      {% if year_chart %}
+      <div class="chart-container" style="margin-top: var(--sp-4);">
+        <img src="{{ year_chart }}" alt="Line chart of mapped question frequencies by year and topic" style="max-width:100%;height:auto" />
+      </div>
+      {% endif %}
+      <div class="table-responsive" style="margin-top: var(--sp-4);">
+        <table class="data-table">
+          <thead><tr><th>Topic</th>{% for year in trend_years %}<th>{{ year }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in trend_rows %}<tr><td>{{ row.topic }}</td>{% for count in row.counts %}<td>{{ count }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="result-notice">Year trends are unavailable: {{ year_trends_reason }}</p>
+      {% endif %}
+    </div>
+
+    <div class="result-actions" style="margin-top: var(--sp-8); text-align: center;">
+      <a href="{{ url_for('questionbank') }}" class="btn btn--secondary">← Upload Different Papers</a>
+      <a href="{{ url_for('analytics') }}" class="btn btn--primary">Go to Analytics Dashboard →</a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

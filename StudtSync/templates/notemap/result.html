@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}NoteMap — Result{% endblock %}
+{% block meta_desc %}NoteMap subject prediction and model confidence scores.{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Analysis Completed</span>
+    <h1 class="page-title">🗒️ NoteMap Result</h1>
+    <p class="page-subtitle">Classification outcome and model evaluation for your uploaded study note.</p>
+  </div>
+</section>
+
+<section class="result-section">
+  <div class="container container--narrow">
+
+    <div class="content-card result-card">
+      <div class="result-highlight-header">
+        <span class="result-category-label">Predicted Subject</span>
+        <div class="result-subject-title">{{ result.prediction }}</div>
+        <div class="result-model-badge">Evaluated via {{ result.model_name }}</div>
+      </div>
+
+      <div class="result-details-grid">
+        <div class="result-detail-item">
+          <span class="result-label">Document</span>
+          <span class="result-value"><strong>{{ result.filename }}</strong></span>
+        </div>
+        <div class="result-detail-item">
+          <span class="result-label">Extracted Content</span>
+          <span class="result-value">{{ result.characters }} characters{% if result.pages %}, {{ result.pages }} pages{% endif %}</span>
+        </div>
+      </div>
+
+      {% if result.message %}
+      <div class="result-notice">ℹ️ {{ result.message }}</div>
+      {% endif %}
+
+      <div class="scores-section">
+        <h3 class="section-subheading">Subject scores</h3>
+        {% if result.scores %}
+        <p class="text-sm text-muted">These are {{ result.score_type }} values, not probabilities or calibrated confidence.</p>
+        <div class="score-bars-list">
+          {% for item in result.scores %}
+          <div class="score-bar-item">
+            <div class="score-bar-header">
+              <span class="score-label{% if item.label == result.prediction %} score-label--highlight{% endif %}">{{ item.label }}</span>
+              <span class="score-val"><code>{{ "%.3f"|format(item.score) }}</code></span>
+            </div>
+            <div class="conf-track">
+              <div class="conf-fill" style="width: {{ [[(item.score * 100)|round, 4]|max, 100]|min }}%;"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">{{ result.reason }}</p>
+        {% endif %}
+      </div>
+
+      <div class="result-notice {% if result.needs_review %}result-notice--warning{% endif %}">
+        {% if result.needs_review %}
+        ⚠️ <strong>Review suggested:</strong> {{ result.reason }}
+        {% else %}
+        ✅ <strong>High alignment:</strong> Note content aligns well with trained subject keywords.
+        {% endif %}
+      </div>
+
+      <div class="metrics-collapsible">
+        <details>
+          <summary class="metrics-summary-toggle">View Held-out Demonstration Test Scores</summary>
+          <p class="text-xs text-muted" style="margin-top: var(--sp-2);">These metrics describe a small held-out test split of demonstration examples only, and do not represent accuracy on real student notes.</p>
+          <div class="metric-row" style="margin-top: var(--sp-4);">
+            <div class="stat-mini-box">
+              <span class="stat-mini-label">Accuracy</span>
+              <span class="stat-mini-val">{{ "%.3f"|format(result.model_metrics.accuracy) }}</span>
+            </div>
+            <div class="stat-mini-box">
+              <span class="stat-mini-label">Macro Precision</span>
+              <span class="stat-mini-val">{{ "%.3f"|format(result.model_metrics.precision_macro) }}</span>
+            </div>
+            <div class="stat-mini-box">
+              <span class="stat-mini-label">Macro Recall</span>
+              <span class="stat-mini-val">{{ "%.3f"|format(result.model_metrics.recall_macro) }}</span>
+            </div>
+            <div class="stat-mini-box">
+              <span class="stat-mini-label">Macro-F1</span>
+              <span class="stat-mini-val">{{ "%.3f"|format(result.model_metrics.macro_f1) }}</span>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    {% if result.prediction in subjects or not result.scores %}
+    <form method="POST" action="{{ url_for('notemap_correct') }}" class="content-card result-card">
+      <h3 class="section-subheading">Review or correct this prediction</h3>
+      <p class="text-sm text-muted">If needed, choose the correct subject from the available list:</p>
+      <input type="hidden" name="predicted_subject" value="{{ result.prediction }}" />
+      <div class="form-group" style="margin-top: var(--sp-3);">
+        <label class="form-label" for="correctedSubject">Correct subject</label>
+        <select class="form-control" id="correctedSubject" name="corrected_subject" required>
+          {% for subject in subjects %}
+          <option value="{{ subject }}" {% if subject == result.prediction %}selected{% endif %}>
+            {{ subject }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn--secondary">Submit correction</button>
+    </form>
+    {% endif %}
+
+    <div class="result-actions" style="margin-top: var(--sp-6); text-align: center;">
+      <a href="{{ url_for('notemap') }}" class="btn btn--primary" id="upload-another">
+        ← Upload another note
+      </a>
+      <a href="{{ url_for('analytics') }}" class="btn btn--secondary">
+        View Analytics Dashboard →
+      </a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

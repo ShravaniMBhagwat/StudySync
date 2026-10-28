@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block meta_desc %}StudySync helps organise study notes and explore question-paper topics with machine learning.{% endblock %}
+
+{% block content %}
+
+<!-- Offline local fallback if opened directly from folder as file:// -->
+<script>
+  if (window.location.protocol === 'file:') {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '../static/css/style.css';
+    document.head.appendChild(l);
+    const f = document.createElement('link');
+    f.rel = 'stylesheet';
+    f.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap';
+    document.head.appendChild(f);
+  }
+</script>
+<div id="local-file-banner" style="display:none; background: linear-gradient(135deg, rgba(79, 70, 229, 0.25), rgba(13, 148, 136, 0.2)); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 12px; padding: 14px 20px; margin: 20px auto; max-width: 960px; color: #f8fafc; font-family: 'Inter', sans-serif;">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="font-weight:700; font-size:15px; margin-bottom:3px;">⚡ Viewing offline template file</div>
+      <div style="font-size:13px; color:#cbd5e1;">StudySync uses a Python Flask backend to run ML classifiers and parse notes. Run <code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-family:monospace;">run_app.bat</code> or open the running server:</div>
+    </div>
+    <a href="http://127.0.0.1:5000" style="display:inline-block; padding:8px 18px; background:#4f46e5; color:#fff; font-weight:600; font-size:13px; border-radius:8px; text-decoration:none;">Open http://127.0.0.1:5000 →</a>
+  </div>
+</div>
+<script>
+  if (window.location.protocol === 'file:') {
+    const b = document.getElementById('local-file-banner');
+    if (b) b.style.display = 'block';
+  }
+</script>
+
+<!-- ═══ Hero ══════════════════════════════════════════════════════ -->
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="hero-inner">
+    <div class="hero-text-col">
+      <div class="hero-badge">
+        <span class="badge-dot" aria-hidden="true"></span>
+        <span>Intelligent Academic Workspace</span>
+      </div>
+      <h1 class="hero-title" id="hero-heading">
+        Your ML-Powered<br>
+        <span class="gradient-accent-text">Study Companion</span>
+      </h1>
+      <p class="hero-sub">
+        Upload study notes for instant subject classification. Analyse previous-year question
+        papers to explore topic patterns, frequency distributions, and syllabus coverage gaps — powered by transparent
+        machine-learning models.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('notemap') }}" class="btn btn--primary btn--lg" id="cta-notemap">
+          <span>Classify a Note</span> <span aria-hidden="true">→</span>
+        </a>
+        <a href="{{ url_for('questionbank') }}" class="btn btn--ghost btn--lg" id="cta-qbank">
+          <span>Analyse Question Papers</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hero-stat hero-stat--1">
+        <div class="hero-stat-icon-wrap">
+          <span class="hero-stat-icon">🗒️</span>
+        </div>
+        <div class="hero-stat-body">
+          <div class="hero-stat-val">TF-IDF</div>
+          <div class="hero-stat-lbl">Feature Extraction</div>
+        </div>
+      </div>
+      <div class="hero-stat hero-stat--2">
+        <div class="hero-stat-icon-wrap">
+          <span class="hero-stat-icon">🤖</span>
+        </div>
+        <div class="hero-stat-body">
+          <div class="hero-stat-val">MNB + SVM</div>
+          <div class="hero-stat-lbl">Supervised Classifiers</div>
+        </div>
+      </div>
+      <div class="hero-stat hero-stat--3">
+        <div class="hero-stat-icon-wrap">
+          <span class="hero-stat-icon">📊</span>
+        </div>
+        <div class="hero-stat-body">
+          <div class="hero-stat-val">Cosine Sim</div>
+          <div class="hero-stat-lbl">Topic Alignment</div>
+        </div>
+      </div>
+      <div class="hero-stat hero-stat--4">
+        <div class="hero-stat-icon-wrap">
+          <span class="hero-stat-icon">🔬</span>
+        </div>
+        <div class="hero-stat-body">
+          <div class="hero-stat-val">KMeans &amp; SVD</div>
+          <div class="hero-stat-lbl">Unsupervised Discovery</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Quick Stats (demo) ════════════════════════════════════════ -->
+<div class="stats-bar" aria-label="Project statistics">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-val">4</div>
+      <div class="stat-lbl">Core Modules <span class="stat-live-tag">live</span></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">6+</div>
+      <div class="stat-lbl">ML Techniques <span class="stat-live-tag">scikit-learn</span></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">100%</div>
+      <div class="stat-lbl">Runtime Evaluated <span class="stat-live-tag">live</span></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">PyMuPDF</div>
+      <div class="stat-lbl">Native Extraction <span class="stat-live-tag">fast</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Module Cards ══════════════════════════════════════════════ -->
+<section class="section" aria-labelledby="modules-heading">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">Comprehensive Toolkit</span>
+      <h2 class="section-title" id="modules-heading">Engineered for Academic Focus</h2>
+      <p class="section-sub">Each module is backed by a transparent machine-learning pipeline that you can inspect, verify, and trace.</p>
+    </div>
+
+    <div class="grid-4-cards">
+
+      <!-- NoteMap -->
+      <article class="module-card module-card--blue" id="card-notemap">
+        <div class="card-top-row">
+          <div class="card-icon-wrap icon-blue" aria-hidden="true">🗒️</div>
+          <span class="card-badge card-badge--blue">Classification</span>
+        </div>
+        <div>
+          <h3 class="card-title">NoteMap</h3>
+          <p class="card-body">
+            Upload PDF or TXT study notes. StudySync extracts clean text with
+            <strong>PyMuPDF</strong>, vectorises it with <strong>TF-IDF</strong>,
+            and classifies the subject using <strong>Multinomial Naive Bayes</strong>
+            or <strong>Linear SVM</strong> with clear confidence scoring.
+          </p>
+        </div>
+        <div class="card-tags" aria-label="Techniques">
+          <span class="tag tag--blue">TF-IDF</span>
+          <span class="tag tag--blue">Naive Bayes</span>
+          <span class="tag tag--blue">Linear SVM</span>
+        </div>
+        <a href="{{ url_for('notemap') }}" class="card-link" id="link-notemap">
+          Open NoteMap <span aria-hidden="true">→</span>
+        </a>
+      </article>
+
+      <!-- QuestionBank -->
+      <article class="module-card module-card--violet" id="card-qbank">
+        <div class="card-top-row">
+          <div class="card-icon-wrap icon-violet" aria-hidden="true">📋</div>
+          <span class="card-badge card-badge--violet">Pattern Mapping</span>
+        </div>
+        <div>
+          <h3 class="card-title">QuestionBank Mapper</h3>
+          <p class="card-body">
+            Upload your syllabus and previous-year examination papers. The engine segments
+            individual questions, maps each to its corresponding syllabus topic via <strong>Cosine Similarity</strong>,
+            and pinpoints potential <em>coverage gaps</em> across exam years.
+          </p>
+        </div>
+        <div class="card-tags" aria-label="Techniques">
+          <span class="tag tag--violet">Cosine Similarity</span>
+          <span class="tag tag--violet">Topic Alignment</span>
+          <span class="tag tag--violet">Gap Analysis</span>
+        </div>
+        <a href="{{ url_for('questionbank') }}" class="card-link card-link--violet" id="link-qbank">
+          Open QuestionBank <span aria-hidden="true">→</span>
+        </a>
+      </article>
+
+      <!-- Analytics -->
+      <article class="module-card module-card--teal" id="card-analytics">
+        <div class="card-top-row">
+          <div class="card-icon-wrap icon-teal" aria-hidden="true">📊</div>
+          <span class="card-badge card-badge--teal">Insights</span>
+        </div>
+        <div>
+          <h3 class="card-title">Analytics Dashboard</h3>
+          <p class="card-body">
+            A real-time window into pipeline performance: confusion matrices, cross-validation
+            benchmarks, year-over-year topic frequencies, and downloadable CSV summaries.
+            All metrics computed live with no fabricated values.
+          </p>
+        </div>
+        <div class="card-tags" aria-label="Techniques">
+          <span class="tag tag--teal">Confusion Matrix</span>
+          <span class="tag tag--teal">5-Fold CV</span>
+          <span class="tag tag--teal">CSV Export</span>
+        </div>
+        <a href="{{ url_for('analytics') }}" class="card-link card-link--teal" id="link-analytics">
+          View Analytics <span aria-hidden="true">→</span>
+        </a>
+      </article>
+
+      <!-- Model Lab -->
+      <article class="module-card module-card--amber" id="card-model-lab">
+        <div class="card-top-row">
+          <div class="card-icon-wrap icon-amber" aria-hidden="true">🧪</div>
+          <span class="card-badge card-badge--amber">Workbench</span>
+        </div>
+        <div>
+          <h3 class="card-title">Model Lab</h3>
+          <p class="card-body">
+            An interactive playground for exploring machine-learning mechanics: SelectKBest chi-squared
+            feature selection, sparse TruncatedSVD dimensionality reduction, KMeans clustering, and
+            baseline linear regression experiments.
+          </p>
+        </div>
+        <div class="card-tags" aria-label="Techniques">
+          <span class="tag tag--amber">SelectKBest</span>
+          <span class="tag tag--amber">TruncatedSVD</span>
+          <span class="tag tag--amber">KMeans</span>
+        </div>
+        <a href="{{ url_for('model_lab') }}" class="card-link card-link--amber" id="link-model-lab">
+          Launch Model Lab <span aria-hidden="true">→</span>
+        </a>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ How It Works ══════════════════════════════════════════════ -->
+<section class="section section--shaded" aria-labelledby="how-heading">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">End-to-End Workflow</span>
+      <h2 class="section-title" id="how-heading">How StudySync Operates</h2>
+      <p class="section-sub">A streamlined pipeline from document upload to actionable academic insights.</p>
+    </div>
+    <div class="steps-row" role="list">
+      <div class="step-box" role="listitem">
+        <div class="step-number-wrap">01</div>
+        <h3>Upload Files</h3>
+        <p>Drop in PDF or TXT notes, or upload your course syllabus alongside previous-year question papers.</p>
+      </div>
+      <div class="step-box" role="listitem">
+        <div class="step-number-wrap">02</div>
+        <h3>Extract Text</h3>
+        <p>PyMuPDF extracts clean text page-by-page while preserving structural integrity and source references.</p>
+      </div>
+      <div class="step-box" role="listitem">
+        <div class="step-number-wrap">03</div>
+        <h3>Process &amp; Vectorize</h3>
+        <p>TF-IDF transforms text into high-dimensional vector representations ready for scikit-learn models.</p>
+      </div>
+      <div class="step-box" role="listitem">
+        <div class="step-number-wrap">04</div>
+        <h3>Review &amp; Explore</h3>
+        <p>Inspect predicted subjects, review mapped questions against syllabus topics, and examine visual trends.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

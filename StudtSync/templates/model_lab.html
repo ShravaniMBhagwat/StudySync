@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Model Lab{% endblock %}
+{% block meta_desc %}Explore transparent feature selection, sparse text reduction, clustering, and regression experiments.{% endblock %}
+
+{% block content %}
+<script>
+  if (window.location.protocol === 'file:') {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '../static/css/style.css';
+    document.head.appendChild(l);
+  }
+</script>
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Interactive ML Workbench</span>
+    <h1 class="page-title">🧪 Model Lab</h1>
+    <p class="page-subtitle">Explore reproducible machine-learning experiments and the ideas behind them.</p>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="container">
+    <div class="phase-banner" role="note">
+      <span class="phase-pill">Demonstration Lab</span>
+      <p>Text experiments use the 60 explicitly generated NoteMap demonstration examples unless you enter your own text below. Results are exploratory and are not claims about all study notes.</p>
+    </div>
+
+    <div class="content-card experiment-card">
+      <h2 class="content-card-title">Choose text documents for unsupervised views</h2>
+      <p>Optional: enter documents separated by a blank line. The text is processed for this request only and is not retained. If left blank, the generated demo corpus is used for reduction and clustering.</p>
+      <form method="POST" action="{{ url_for('model_lab') }}" class="lab-form">
+        <label class="form-label" for="modelLabDocuments">Text documents (one document per paragraph)</label>
+        <textarea id="modelLabDocuments" name="documents" rows="8" class="form-control" maxlength="50000" placeholder="Paste or type document samples here, separated by a blank line...">{{ custom_text }}</textarea>
+        <div class="form-inline-group">
+          <div>
+            <label class="form-label" for="clusterCount">Number of clusters</label>
+            <input id="clusterCount" name="n_clusters" type="number" min="2" max="10" value="{{ requested_clusters }}" class="form-control-sm" />
+          </div>
+          <button type="submit" class="btn btn--primary">Run Model Lab →</button>
+        </div>
+      </form>
+      <p class="form-sub-note">Current unsupervised corpus: <strong>{{ document_count }} documents</strong>{% if using_custom_text %} (entered for this request){% else %} (demonstration examples){% endif %}.</p>
+    </div>
+
+    <div class="content-card experiment-card" id="feature-selection">
+      <h2 class="content-card-title">A. Feature selection: SelectKBest + chi-squared</h2>
+      <p>Chi-squared ranks non-negative TF-IDF terms by association with the known subject labels. The comparison uses a fixed stratified train/test split (seed {{ feature_selection.random_seed }}); the vectorizer and selector are fitted using training data only.</p>
+      <p>Selected <strong>{{ feature_selection.selected_features }}</strong> of <strong>{{ feature_selection.total_features }}</strong> training-vocabulary features (requested {{ feature_selection.requested_features }}). This count is a teaching choice, not a universal optimum. Fewer terms can reduce noise and cost but may remove useful context.</p>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Representation</th><th>Test accuracy</th><th>Test macro-F1</th></tr></thead>
+          <tbody>
+            <tr><td>All TF-IDF terms</td><td>{{ "%.3f"|format(feature_selection.baseline_accuracy) }}</td><td>{{ "%.3f"|format(feature_selection.baseline_macro_f1) }}</td></tr>
+            <tr><td>Top chi-squared terms</td><td>{{ "%.3f"|format(feature_selection.selected_accuracy) }}</td><td>{{ "%.3f"|format(feature_selection.selected_macro_f1) }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="feature-tags-wrap"><strong>Selected terms:</strong> {{ feature_selection.selected_terms|join(", ") }}</p>
+      <p class="text-xs text-muted">These metrics describe a tiny generated dataset and one held-out split only; they do not establish real-world performance.</p>
+    </div>
+
+    <div class="content-card experiment-card" id="dimensionality-reduction">
+      <h2 class="content-card-title">B. Dimensionality reduction: TruncatedSVD</h2>
+      <p>TF-IDF text matrices are sparse. TruncatedSVD works directly with sparse input and does not center it. PCA normally centers features, which can turn a large sparse matrix dense and consume substantial memory. Unlike PCA, TruncatedSVD on uncentered data is commonly used as latent semantic analysis.</p>
+      {% if dimensionality.available %}
+      <p>Fitted to <strong>{{ dimensionality.document_count }} documents</strong> and <strong>{{ dimensionality.feature_count }} TF-IDF terms</strong>. Two components explain <strong>{{ "%.1f"|format(dimensionality.total_explained_variance * 100) }}%</strong> of observed variance. This is a lossy two-dimensional view, not a classifier or a guaranteed meaningful map.</p>
+      <div class="chart-container">
+        <img src="{{ dimensionality.chart }}" alt="Two-dimensional TruncatedSVD projection of the text documents" />
+      </div>
+      {% else %}
+      <p class="result-notice">No plot shown: {{ dimensionality.reason }}</p>
+      {% endif %}
+    </div>
+
+    <div class="content-card experiment-card" id="clustering">
+      <h2 class="content-card-title">C. KMeans clustering</h2>
+      <p>KMeans groups TF-IDF document vectors into {{ requested_clusters }} discovered clusters. Clusters are algorithmic groupings and are not guaranteed to match official syllabus units or subjects.</p>
+      {% if clustering.available %}
+      <p><strong>{{ clustering.document_count }} documents</strong>; inertia: <code>{{ "%.3f"|format(clustering.inertia) }}</code>. {% if clustering.silhouette_score is not none %}Cosine silhouette score: <code>{{ "%.3f"|format(clustering.silhouette_score) }}</code>.{% else %}Silhouette score was unavailable.{% endif %}</p>
+      <p class="diagnostic-text">{{ clustering.diagnostic_note }}</p>
+      {% if clustering.chart %}
+      <div class="chart-container">
+        <img src="{{ clustering.chart }}" alt="SVD visualization with KMeans cluster colors" />
+      </div>
+      {% endif %}
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead><tr><th>Cluster</th><th>Documents</th><th>Representative TF-IDF terms</th><th>Example document</th></tr></thead>
+          <tbody>
+            {% for cluster in clustering.clusters %}
+            <tr><td><span class="cluster-badge">#{{ cluster.cluster_id + 1 }}</span></td><td>{{ cluster.document_count }}</td><td>{{ cluster.top_terms|join(", ") }}</td><td class="text-truncate-cell">{{ cluster.example }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="result-notice">Clustering unavailable: {{ clustering.reason }}</p>
+      {% endif %}
+    </div>
+
+    <div class="content-card experiment-card" id="regression">
+      <h2 class="content-card-title">D. Linear regression baseline</h2>
+      <p>Dataset: UCI Student Performance mathematics-course data. Features: studytime, failures, absences, G1, and G2; target: G3. A reproducible 80/20 split (seed 42) is used. G1 and G2 are prior grades from the same dataset, so the task is a retrospective baseline—not an early-term forecast.</p>
+      {% if regression.available %}
+      <p>{{ regression.n_used }} real dataset rows; {{ regression.n_train }} training and {{ regression.n_test }} held-out test rows.</p>
+      <div class="metric-row">
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">MAE</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.mae) }}</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">RMSE</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.rmse) }}</span>
+        </div>
+        <div class="stat-mini-box">
+          <span class="stat-mini-label">R&sup2; Score</span>
+          <span class="stat-mini-val">{{ "%.3f"|format(regression.r2) }}</span>
+        </div>
+      </div>
+      {% if regression.actual_predicted_chart %}
+      <div class="chart-container">
+        <img src="{{ regression.actual_predicted_chart }}" alt="Actual versus predicted values for held-out UCI regression rows" />
+      </div>
+      {% endif %}
+      <p class="text-muted">{{ regression.disclaimer }}</p>
+      {% else %}
+      <p class="result-notice">{{ regression.reason }}</p>
+      {% endif %}
+      <p class="text-xs text-muted">{{ regression.citation }}</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

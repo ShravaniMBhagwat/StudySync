@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudySync — Quick Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/css/style.css" />
+  <style>
+    .launcher-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      background: radial-gradient(circle at 50% 10%, rgba(79, 70, 229, 0.18), transparent 60%),
+                  radial-gradient(circle at 85% 60%, rgba(13, 148, 136, 0.12), transparent 50%),
+                  var(--color-bg);
+    }
+    .launcher-card {
+      max-width: 760px;
+      width: 100%;
+      background: rgba(18, 26, 47, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-xl);
+      padding: clamp(28px, 5vw, 48px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(16px);
+      text-align: center;
+    }
+    .server-status-box {
+      margin: 28px 0;
+      padding: 20px 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.6);
+      text-align: left;
+    }
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+      animation: pulse 2s infinite;
+    }
+    .status-dot.online {
+      background: #10b981;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+    }
+    .instruction-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+      color: var(--color-text-muted);
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(79, 70, 229, 0.2);
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      color: #a5b4fc;
+      font-weight: 700;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .code-pill {
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+  <div class="launcher-wrap">
+    <div class="launcher-card">
+      <div class="hero-badge" style="margin: 0 auto 20px auto; display: inline-flex;">
+        <span class="badge-dot"></span>
+        <span>Study Material Organiser &amp; PYQ Analyser</span>
+      </div>
+
+      <h1 class="hero-title" style="font-size: clamp(2rem, 4vw, 2.75rem); margin-bottom: 12px;">
+        Study<span class="gradient-accent-text">Sync</span>
+      </h1>
+      <p class="hero-sub" style="margin: 0 auto; max-width: 600px;">
+        StudySync is a full-stack Python application with machine learning pipelines for subject classification, syllabus parsing, and PYQ frequency analytics.
+      </p>
+
+      <div class="server-status-box" id="statusBox">
+        <div class="status-indicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Checking server status at http://127.0.0.1:5000...</span>
+        </div>
+        <p id="statusDesc" style="margin: 0 0 16px 0; font-size: 0.88rem; color: var(--color-text-muted);">
+          StudySync runs via Flask. Because HTML files in <code>templates/</code> are server-side Jinja templates, the Python backend must be active to serve pages with complete styling and interactive ML models.
+        </p>
+
+        <div id="instructions">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: var(--color-text);">To start the application:</div>
+          <div class="instruction-step">
+            <span class="step-number">1</span>
+            <span>Double-click <strong class="code-pill">run_app.bat</strong> inside this project folder.</span>
+          </div>
+          <div class="instruction-step">
+            <span class="step-number">2</span>
+            <span>Or in PowerShell / Command Prompt, run: <code class="code-pill">python app.py</code></span>
+          </div>
+          <div class="instruction-step">
+            <span class="step-number">3</span>
+            <span>Once started, your browser opens automatically to <code class="code-pill">http://127.0.0.1:5000</code>.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <a href="http://127.0.0.1:5000" class="btn btn--primary btn--lg" id="launchBtn">
+          <span>Open StudySync (http://127.0.0.1:5000)</span>
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const statusDesc = document.getElementById('statusDesc');
+    const instructions = document.getElementById('instructions');
+    const launchBtn = document.getElementById('launchBtn');
+
+    function checkServer() {
+      fetch('http://127.0.0.1:5000/health', { method: 'GET', mode: 'cors' })
+        .then(res => {
+          if (res.ok) {
+            statusDot.classList.add('online');
+            statusText.textContent = 'Server is LIVE at http://127.0.0.1:5000';
+            statusText.style.color = '#10b981';
+            statusDesc.textContent = 'Connected successfully! Redirecting you into StudySync...';
+            instructions.style.display = 'none';
+            launchBtn.innerHTML = '<span>Enter StudySync Now</span> →';
+            setTimeout(() => {
+              window.location.href = 'http://127.0.0.1:5000';
+            }, 1200);
+          }
+        })
+        .catch(() => {
+          statusText.textContent = 'Server offline — waiting for app to start';
+          setTimeout(checkServer, 2000);
+        });
+    }
+
+    checkServer();
+  </script>
+</body>
+</html>

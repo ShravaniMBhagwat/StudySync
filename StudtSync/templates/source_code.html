@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Source Code Explorer{% endblock %}
+{% block meta_desc %}Browse and inspect all 32 project source files powering StudySync's machine learning pipeline and interface.{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Complete Codebase Explorer</span>
+    <h1 class="page-title">💻 Source Code</h1>
+    <p class="page-subtitle">Inspect the actual code powering StudySync — machine learning algorithms, text extractors, web routes, and test suites.</p>
+  </div>
+</section>
+
+<section class="source-section">
+  <div class="container">
+    <!-- Quick filter bar -->
+    <div class="source-topbar">
+      <div class="source-filter-pills" role="tablist" aria-label="Filter file types">
+        <button type="button" class="filter-pill active" data-filter="all">All ({{ source_files|length }})</button>
+        <button type="button" class="filter-pill" data-filter=".py">Python</button>
+        <button type="button" class="filter-pill" data-filter=".html">HTML Templates</button>
+        <button type="button" class="filter-pill" data-filter=".css,.js">Styles &amp; JS</button>
+        <button type="button" class="filter-pill" data-filter="tests/">Tests</button>
+      </div>
+      <div class="source-search-wrap">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="sourceSearchInput" class="source-search-input" placeholder="Quick filter files (e.g. classifier, trend)..." aria-label="Filter files" />
+      </div>
+    </div>
+
+    <div class="source-layout">
+      <!-- File Explorer Sidebar -->
+      <aside class="source-sidebar" aria-label="Source files catalog">
+        <div class="sidebar-header">
+          <h2>Project Files</h2>
+          <span class="file-count-badge" id="fileCountBadge">{{ source_files|length }} files</span>
+        </div>
+        <nav class="source-file-list" id="sourceFileList">
+          {% for source_file in source_files %}
+          {% set ext = source_file.split('.')[-1] %}
+          <a href="{{ url_for('source_code', file=source_file) }}"
+             class="source-file-link{% if source_file == selected_file %} active{% endif %}"
+             data-file="{{ source_file }}"
+             data-ext=".{{ ext }}"
+             title="{{ source_file }}"
+             {% if source_file == selected_file %}aria-current="page"{% endif %}>
+            <span class="ext-badge ext-badge--{{ ext }}" aria-hidden="true">
+              {% if ext == 'py' %}PY{% elif ext == 'html' %}HT{% elif ext == 'css' %}CS{% elif ext == 'js' %}JS{% else %}DOC{% endif %}
+            </span>
+            <span class="source-file-name">{{ source_file }}</span>
+          </a>
+          {% endfor %}
+        </nav>
+      </aside>
+
+      <!-- Code Viewer Section -->
+      <section class="source-viewer" aria-label="Selected source code">
+        {% if selected_file and source_text is not none %}
+        <div class="source-viewer-header">
+          <div class="viewer-meta">
+            <span class="section-eyebrow">Active File</span>
+            <h2 class="active-file-title">
+              <span class="file-icon" aria-hidden="true">📄</span>
+              {{ selected_file }}
+            </h2>
+            {% if file_stats %}
+            <div class="file-stats-badges">
+              <span class="stat-pill">{{ file_stats.lines }} lines</span>
+              <span class="stat-pill">{{ file_stats.size_formatted }}</span>
+              <span class="stat-pill stat-pill--highlight">{{ file_stats.ext }}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div class="viewer-actions">
+            <button type="button" class="btn btn--secondary btn--sm" id="copyCodeBtn" onclick="copySourceCode()" aria-label="Copy source code to clipboard">
+              <span id="copyIcon">📋</span> <span id="copyBtnText">Copy Code</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="code-editor-container">
+          <div class="code-line-numbers" aria-hidden="true">
+            {% for line in source_text.splitlines() %}
+            <span>{{ loop.index }}</span>
+            {% endfor %}
+          </div>
+          <pre class="code-pre"><code id="sourceCodeBlock">{{ source_text }}</code></pre>
+        </div>
+        {% else %}
+        <div class="source-empty">
+          <span class="empty-code-icon" aria-hidden="true">💻</span>
+          <h2>Select a Source File</h2>
+          <p>Choose any file from the explorer on the left to inspect its complete code.</p>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function copySourceCode() {
+  const codeEl = document.getElementById('sourceCodeBlock');
+  const btnText = document.getElementById('copyBtnText');
+  const copyIcon = document.getElementById('copyIcon');
+  if (!codeEl) return;
+
+  navigator.clipboard.writeText(codeEl.innerText).then(() => {
+    btnText.textContent = 'Copied!';
+    copyIcon.textContent = '✅';
+    setTimeout(() => {
+      btnText.textContent = 'Copy Code';
+      copyIcon.textContent = '📋';
+    }, 2200);
+  }).catch(() => {
+    // Fallback selection
+    const range = document.createRange();
+    range.selectNodeContents(codeEl);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    btnText.textContent = 'Copied!';
+    copyIcon.textContent = '✅';
+    setTimeout(() => {
+      btnText.textContent = 'Copy Code';
+      copyIcon.textContent = '📋';
+    }, 2200);
+  });
+}
+
+// Source file search and filter
+(function() {
+  const searchInput = document.getElementById('sourceSearchInput');
+  const fileLinks = document.querySelectorAll('.source-file-link');
+  const filterPills = document.querySelectorAll('.filter-pill');
+  const badge = document.getElementById('fileCountBadge');
+
+  let currentCategory = 'all';
+  let searchTerm = '';
+
+  function applyFilters() {
+    let visibleCount = 0;
+    fileLinks.forEach(link => {
+      const fileName = (link.dataset.file || '').toLowerCase();
+      const ext = link.dataset.ext || '';
+
+      let matchesCat = true;
+      if (currentCategory === 'all') {
+        matchesCat = true;
+      } else if (currentCategory === 'tests/') {
+        matchesCat = fileName.startsWith('tests/');
+      } else if (currentCategory.includes(',')) {
+        const exts = currentCategory.split(',');
+        matchesCat = exts.includes(ext);
+      } else {
+        matchesCat = ext === currentCategory;
+      }
+
+      const matchesSearch = !searchTerm || fileName.includes(searchTerm);
+
+      if (matchesCat && matchesSearch) {
+        link.style.display = 'flex';
+        visibleCount++;
+      } else {
+        link.style.display = 'none';
+      }
+    });
+
+    if (badge) {
+      badge.textContent = `${visibleCount} file${visibleCount === 1 ? '' : 's'}`;
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  filterPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      filterPills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentCategory = pill.dataset.filter;
+      applyFilters();
+    });
+  });
+})();
+</script>
+{% endblock %}

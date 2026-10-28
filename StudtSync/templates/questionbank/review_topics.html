@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}QuestionBank — Review Syllabus Topics{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Step 2: Syllabus Verification</span>
+    <h1 class="page-title">📋 Review syllabus topics</h1>
+    <p class="page-subtitle">Verify and inspect the extracted main topics with bold headings before mapping examination questions.</p>
+  </div>
+</section>
+
+<section class="result-section">
+  <div class="container container--narrow">
+    <div class="content-card result-card">
+      <div class="card-header-flex">
+        <div>
+          <span class="section-eyebrow">Source Document(s)</span>
+          <h2 class="content-card-title">{{ syllabus.filename }}</h2>
+        </div>
+        <span class="stat-pill stat-pill--highlight">{{ topics|length }} Topics Extracted</span>
+      </div>
+
+      <div class="info-callout" style="margin-top: var(--sp-4);">
+        <div class="callout-icon" aria-hidden="true">ℹ️</div>
+        <div class="callout-body">
+          <strong>Review Guidelines:</strong> The main syllabus topics extracted from your documents are displayed below with bold headings. You can review them in the card view or edit the topic list in the editor before mapping questions.
+        </div>
+      </div>
+
+      <!-- Main Topics Preview with Bold Headings -->
+      <div class="main-topics-display-section" style="margin: var(--sp-6) 0;">
+        <div class="section-subheading-flex">
+          <h3 class="section-subheading" style="margin: 0;">Main Syllabus Topics</h3>
+          <span class="text-xs text-muted">{{ topics|length }} main topics identified</span>
+        </div>
+        
+        <div class="topics-cards-grid" id="topicsCardGrid" style="margin-top: var(--sp-4);">
+          {% for topic in topics %}
+          {% set subheadings = topic_subheadings.get(topic, []) if topic_subheadings else [] %}
+          <div class="topic-item-card">
+            <div class="topic-item-header">
+              <span class="topic-num-badge">Topic {{ loop.index }}</span>
+              {% set source_rec = topic_sources|selectattr("topic", "equalto", topic)|first %}
+              {% if source_rec and source_rec.page_number %}
+              <span class="topic-page-badge">p. {{ source_rec.page_number }}</span>
+              {% endif %}
+            </div>
+            <h4 class="topic-item-title">{{ topic }}</h4>
+
+            {% if subheadings %}
+            <details class="topic-subheadings-toggle">
+              <summary class="subheadings-toggle-btn">
+                <span>🔍 View Subheadings &amp; Concepts ({{ subheadings|length }})</span>
+                <span class="toggle-arrow" aria-hidden="true">▾</span>
+              </summary>
+              <div class="subheadings-pill-list">
+                {% for sub in subheadings %}
+                <span class="subheading-pill">{{ sub }}</span>
+                {% endfor %}
+              </div>
+            </details>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if topic_sources %}
+      <details class="metrics-collapsible" style="margin: var(--sp-4) 0;">
+        <summary class="metrics-summary-toggle">Original topic source pages</summary>
+        <ul class="styled-list" style="margin-top: var(--sp-3);">
+          {% for source in topic_sources %}
+          <li><strong>{{ source.topic }}</strong> <span class="text-muted">— {{ source.source_file }}, p. {{ source.page_number }}</span></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('questionbank_map') }}" data-loading="Mapping questions to topics with TF-IDF..." style="margin-top: var(--sp-6);">
+        <input type="hidden" name="workflow_id" value="{{ workflow_id }}" />
+
+        <div class="form-group">
+          <label class="form-label" for="syllabusTopics">
+            <strong>Syllabus topics (editable — one topic per line)</strong>
+          </label>
+          <textarea id="syllabusTopics" name="topics" rows="10" required
+                    class="form-control" style="font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.6;">{% for topic in topics %}{{ topic }}{% if not loop.last %}
+{% endif %}{% endfor %}</textarea>
+        </div>
+
+        <div class="uploaded-summary-box">
+          <h3 class="section-subheading">Question papers ({{ question_count }} question candidates found)</h3>
+          <ul class="file-badges-list">
+            {% for paper in papers %}
+            <li class="file-badge-item">
+              <span class="file-badge-icon">📄</span>
+              <span class="file-badge-name"><strong>{{ paper.filename }}</strong></span>
+              <span class="file-badge-details">— {{ paper.characters }} characters, {{ paper.pages }} text pages{% if paper.year != "Unknown" %}, year {{ paper.year }}{% else %}, year unavailable{% endif %}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        {% if duplicate_files %}
+        <p class="result-notice result-notice--warning" style="margin-top: var(--sp-4);">Duplicate paper files were ignored: {{ duplicate_files|join(", ") }}</p>
+        {% endif %}
+
+        <div style="margin-top: var(--sp-6);">
+          <button type="submit" class="btn btn--primary btn--full btn--lg">
+            <span>Map questions to topics</span> <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

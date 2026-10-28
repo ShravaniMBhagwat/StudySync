@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}NoteMap — Upload Notes{% endblock %}
+{% block meta_desc %}Upload PDF or TXT study notes and let StudySync classify them by subject using machine learning.{% endblock %}
+
+{% block content %}
+<script>
+  if (window.location.protocol === 'file:') {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = '../../static/css/style.css';
+    document.head.appendChild(l);
+  }
+</script>
+<section class="page-header">
+  <div class="container">
+    <span class="page-header-badge">Automated Subject Classification</span>
+    <h1 class="page-title">🗒️ NoteMap Classifier</h1>
+    <p class="page-subtitle">Upload one or multiple lecture notes to automatically predict the academic subject using TF-IDF and machine learning.</p>
+  </div>
+</section>
+
+<section class="upload-section">
+  <div class="container container--narrow">
+    <div class="upload-panel">
+      <form method="POST" action="{{ url_for('notemap_analyze') }}"
+            enctype="multipart/form-data" id="notemap-form" data-loading="Extracting text &amp; classifying notes..." novalidate>
+
+        <div class="upload-zone" id="noteUploadZone" role="region" aria-label="File upload area">
+          <input type="file" name="note_file" id="noteFileInput"
+                 accept=".pdf,.txt" class="upload-input" aria-label="Choose note file" multiple required />
+          <div class="upload-label">
+            <div class="upload-icon-wrap" aria-hidden="true">
+              <span class="upload-icon">📂</span>
+            </div>
+            <span class="upload-primary">Click or drag &amp; drop study notes (multiple files supported)</span>
+            <span class="upload-secondary">Supported formats: PDF, TXT &nbsp;•&nbsp; Maximum request size: 16 MB</span>
+            <div class="upload-types">
+              <span class="upload-type-pill">.PDF</span>
+              <span class="upload-type-pill">.TXT</span>
+            </div>
+            <span class="upload-filename" id="noteFilename" aria-live="polite"></span>
+            <button type="button" class="upload-clear" id="noteClear" style="display:none;">Clear files</button>
+          </div>
+        </div>
+
+        <div class="info-callout">
+          <div class="callout-icon" aria-hidden="true">💡</div>
+          <div class="callout-body">
+            <strong>Extraction Note:</strong> Text-based PDFs and TXT files are extracted page-by-page via PyMuPDF. You can select multiple note files at once.
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full btn--lg" id="notemap-submit">
+          <span>Analyse Notes with ML</span> <span aria-hidden="true">→</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
